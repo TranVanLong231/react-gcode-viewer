@@ -12,7 +12,7 @@ const DEFAULT_HEIGHT = 20
 const DEFAULT_CENTER = { x: 100, y: 100 }
 const BACKGROUND = new Color('white')
 const BASE_OPACITY = 0.7
-
+let maxZ = 0
 export interface FloorProps {
   gridWidth?: number
   gridLength?: number
@@ -105,8 +105,7 @@ const GCodeModel: React.FC<GCodeViewerContentProps> = (
       onFinished: (progress) => {
         onGCodeProgress(progress)
         if (callbacks.current.onFinishLoading != null) {
-          const max = Math.max(...gPointBatches.map(({ avgZ }) => avgZ))
-          callbacks.current.onFinishLoading(progress, max)
+          callbacks.current.onFinishLoading(progress, maxZ)
         }
       }
     })
@@ -117,7 +116,7 @@ const GCodeModel: React.FC<GCodeViewerContentProps> = (
     })
   }, [reader, quality])
 
-  const maxZ = useMemo(() => Math.max(...gPointBatches.map(({ avgZ }) => avgZ)), [gPointBatches])
+  maxZ = useMemo(() => Math.max(...gPointBatches.map(({ avgZ }) => avgZ)), [gPointBatches])
   const visibleZ = maxZ * Math.min(visible, 1) - clip
 
   const filteredGPoints = gPointBatches.filter(({ avgZ }) => avgZ <= visibleZ)
