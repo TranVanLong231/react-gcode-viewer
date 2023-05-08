@@ -1,5 +1,5 @@
 export { default as GCodeViewer } from './GCodeViewer'
-export { default as GCodeModel } from './Model'
+export { default as GCodeModel } from './GCodeModelExport'
 export type { GCodeViewerProps } from './GCodeViewer'
 export type { GCodeParseProgress } from './gcode/GCode'
 export type { GPoint } from './gcode/types'
