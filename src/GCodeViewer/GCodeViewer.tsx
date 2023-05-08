@@ -9,6 +9,7 @@ export interface GCodeViewerProps extends
   url: UrlReaderOptions['url']
   reqOptions?: RequestInit
   canvasId?: string
+  clip?: number
 }
 
 const GCodeViewer: React.FC<GCodeViewerProps> = (
@@ -20,6 +21,7 @@ const GCodeViewer: React.FC<GCodeViewerProps> = (
     orbitControls,
     layerColor,
     topLayerColor,
+    clip,
     visible,
     quality,
     floorProps,
@@ -40,6 +42,7 @@ const GCodeViewer: React.FC<GCodeViewerProps> = (
     visible,
     layerColor,
     topLayerColor,
+    clip,
     quality,
     showAxes,
     orbitControls,
@@ -49,18 +52,18 @@ const GCodeViewer: React.FC<GCodeViewerProps> = (
     onError
   }
   return (
-        <div {...otherProps}>
-            <React.Suspense fallback={null}>
-                <Canvas
-                    id={canvasId}
-                    style={{ width: '100%', height: '100%' }}
-                    gl={{ preserveDrawingBuffer: true }}
-                >
-                    <GCodeModel {...modelProps}/>
-                </Canvas>
-            </React.Suspense>
-            {children}
-        </div>
+    <div {...otherProps}>
+      <React.Suspense fallback={null}>
+        <Canvas
+          id={canvasId}
+          style={{ width: '100%', height: '100%' }}
+          gl={{ preserveDrawingBuffer: true }}
+        >
+          <GCodeModel {...modelProps} />
+        </Canvas>
+      </React.Suspense>
+      {children}
+    </div>
   )
 }
 

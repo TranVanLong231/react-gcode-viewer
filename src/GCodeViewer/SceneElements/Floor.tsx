@@ -17,8 +17,8 @@ const Floor: React.FC<FloorProps> = (
   }
 ) => {
   const position: [number, number, number] = [
-    (width ?? 0)/2+0.1,
-    (length ?? 0)/2+0.1,
+    (width ?? 0) / 2 + 0.1,
+    (length ?? 0) / 2 + 0.1,
     0
   ]
   const planeArgs: [number, number, number, number] = [
@@ -29,12 +29,12 @@ const Floor: React.FC<FloorProps> = (
   ]
   if (!visible) return null
   return (
-        <group {...otherProps} >
-            {width != null && length != null && <mesh position={position}>
-                <planeGeometry args={planeArgs}/>
-                <meshStandardMaterial wireframe={true} opacity={0.2}/>
-            </mesh>}
-        </group>
+    <group {...otherProps} >
+      {width != null && length != null && <mesh position={position}>
+        <planeGeometry args={planeArgs} />
+        <meshStandardMaterial color={'black'} wireframe={false} opacity={0.2} />
+      </mesh>}
+    </group>
   )
 }
 

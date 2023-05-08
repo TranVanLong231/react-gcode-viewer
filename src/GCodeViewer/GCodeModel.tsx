@@ -25,11 +25,12 @@ export interface GCodeViewerContentProps {
   topLayerColor?: CSSProperties['color']
   floorProps?: FloorProps
   visible?: number
+  clip?: number
   showAxes?: boolean
   orbitControls?: boolean
   quality?: number
   onProgress?: (progress: GCodeParseProgress) => any
-  onFinishLoading?: (finish: GCodeParseProgress) => any
+  onFinishLoading?: (finish: GCodeParseProgress, maxZ: number) => any
   onError?: (err: Error) => any
 }
 
@@ -50,10 +51,11 @@ const GCodeModel: React.FC<GCodeViewerContentProps> = (
     topLayerColor = 'hotpink',
     visible = 1,
     quality = 1,
+    clip = 0,
     showAxes = false,
     orbitControls = false,
-    onProgress = () => {},
-    onFinishLoading = () => {},
+    onProgress = () => { },
+    onFinishLoading = () => { },
     floorProps: {
       gridLength = 0,
       gridWidth = 0
@@ -73,11 +75,10 @@ const GCodeModel: React.FC<GCodeViewerContentProps> = (
 
   const [center, setCenter] = useState(DEFAULT_CENTER)
   const [gPointBatches, setGPointBatches] = useState<GPointBatch[]>([])
-
   useEffect(() => {
-    function onGCodeProgress ({ points, baseCenter }: GCodeParseProgress): void {
+    function onGCodeProgress({ points, baseCenter }: GCodeParseProgress): void {
       setGPointBatches(prev => {
-        const sum = prev.reduce((acc, p) => acc+p.points.length, 0)
+        const sum = prev.reduce((acc, p) => acc + p.points.length, 0)
         const batchPoints = points.slice(sum)
         if (batchPoints.length === 0) {
           return prev
@@ -104,7 +105,8 @@ const GCodeModel: React.FC<GCodeViewerContentProps> = (
       onFinished: (progress) => {
         onGCodeProgress(progress)
         if (callbacks.current.onFinishLoading != null) {
-          callbacks.current.onFinishLoading(progress)
+          const max = Math.max(...gPointBatches.map(({ avgZ }) => avgZ))
+          callbacks.current.onFinishLoading(progress, max)
         }
       }
     })
@@ -116,57 +118,53 @@ const GCodeModel: React.FC<GCodeViewerContentProps> = (
   }, [reader, quality])
 
   const maxZ = useMemo(() => Math.max(...gPointBatches.map(({ avgZ }) => avgZ)), [gPointBatches])
-  const visibleZ = maxZ*Math.min(visible, 1)
+  const visibleZ = maxZ * Math.min(visible, 1) - clip
 
   const filteredGPoints = gPointBatches.filter(({ avgZ }) => avgZ <= visibleZ)
 
   const isLastLayerBatch = (batch: GPointBatch): boolean =>
-    batch === filteredGPoints[filteredGPoints.length-1] || Math.abs(visibleZ - batch.avgZ) < 0.4
+    batch === filteredGPoints[filteredGPoints.length - 1] || Math.abs(visibleZ - batch.avgZ) < 0.4
 
   const color = (batch: GPointBatch): string => isLastLayerBatch(batch) ? topLayerColor : layerColor
-  const opacity = (batch: GPointBatch): number => (batch.avgZ/visibleZ)*(1-BASE_OPACITY)+BASE_OPACITY
+  const opacity = (batch: GPointBatch): number => (batch.avgZ / visibleZ) * (1 - BASE_OPACITY) + BASE_OPACITY
   const lineWidth = (batch: GPointBatch): number => isLastLayerBatch(batch) ? 2 : 0.1
 
-  const modelCenter = useMemo<[number, number, number]>(() =>
-    [center.x, center.y, DEFAULT_HEIGHT]
-  , [center.x, center.y])
+  const modelCenter = useMemo<[number, number, number]>(() => [center.x, center.y, DEFAULT_HEIGHT], [center.x, center.y])
 
-  const gridCenter = useMemo<[number, number, number] | undefined>(() =>
-    gridWidth > 0 && gridLength > 0 ? [gridWidth / 2, gridLength / 2, DEFAULT_HEIGHT] : undefined
-  , [gridWidth, gridLength])
+  const gridCenter = useMemo<[number, number, number] | undefined>(() => gridWidth > 0 && gridLength > 0 ? [gridWidth / 2, gridLength / 2, DEFAULT_HEIGHT] : undefined, [gridWidth, gridLength])
 
   const cameraCenter = gridCenter ?? modelCenter
 
   return (
-        <>
-            <Camera
-                initialPosition={cameraInitialPosition}
-                center={cameraCenter}
-            />
-            {sceneReady && showAxes &&
-                <axesHelper args={[50]}/>
-            }
-            <Floor
-                visible={sceneReady}
-                length={gridLength}
-                width={gridWidth}
-            />
-            <scene background={BACKGROUND}/>
-            {sceneReady && orbitControls &&
-                <OrbitControls target={cameraCenter}/>
-            }
-            <group>
-                {filteredGPoints.map((pointBatch, i) =>
-                    <GCodeLines
-                        key={`${i} ${pointBatch.points.length}`}
-                        points={pointBatch.points}
-                        color={color(pointBatch)}
-                        opacity={sceneReady ? opacity(pointBatch) : 0}
-                        linewidth={lineWidth(pointBatch)}
-                    />
-                )}
-            </group>
-        </>
+    <>
+      <Camera
+        initialPosition={cameraInitialPosition}
+        center={cameraCenter}
+      />
+      {sceneReady && showAxes &&
+        <axesHelper args={[50]} />
+      }
+      <Floor
+        visible={sceneReady}
+        length={gridLength}
+        width={gridWidth}
+      />
+      <scene background={BACKGROUND} />
+      {sceneReady && orbitControls &&
+        <OrbitControls target={cameraCenter} />
+      }
+      <group>
+        {filteredGPoints.map((pointBatch, i) => {
+          return <GCodeLines
+            key={`${i} ${pointBatch.points.length}`}
+            points={pointBatch.points}
+            color={color(pointBatch)}
+            opacity={sceneReady ? opacity(pointBatch) : 0}
+            linewidth={lineWidth(pointBatch)}
+          />
+        })}
+      </group>
+    </>
   )
 }
 
