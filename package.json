@@ -46,7 +46,7 @@
   "peerDependencies": {
     "react": ">=18.0",
     "react-dom": ">=18.0",
-    "three": ">=0.133"
+    "three": ">=0.152"
   },
   "main": "lib/index.js",
   "module": "lib/index.esm.js",
